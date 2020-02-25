@@ -51,10 +51,10 @@ void loop()
       //Process commands
       if(command.equalsIgnoreCase("DUMP"))
       {
-        for(int i = 1; i <= checkLastLocation(); i++)
+        for(int i = 1; i*2 < getAddress(); i++)
         {
-          uint8_t data = readMemory(i);
-          Serial.println(decompressData(data));
+          uint8_t data = readMemory(i*2);
+          Serial.println(data);
         }
       }
       else if(command.equalsIgnoreCase("RESET"))
@@ -64,13 +64,13 @@ void loop()
       }
       else if(command.equalsIgnoreCase("PRINT"))
       {
-        Serial.println(checkLastLocation());
-        for(int i = 1; i <= checkLastLocation(); i++)
+        Serial.println(getAddress());
+        for(int i = 1; i*2 < getAddress(); i++)
         {
-          uint8_t data = readMemory(i);
-          Serial.print(i);
+          uint8_t data = readMemory(i*2);
+          Serial.print(i-1);
           Serial.print(" --- ");
-          Serial.println(decompressData(data) / 100.0);
+          Serial.println(data / 100.0);
         }
       }
       else
@@ -91,71 +91,79 @@ int readData()
   return k;
 }
 
-/*Converts a 32-bit signed integer into an unsigned 8-bit integer through a linear transformation
- * Input: integer in range 700 +/- 255
- * Output: uint8_t in range 0,255
+/* Converts a 32-bit signed integer into an unsigned 16-bit unsigned integer.
+ * Integers outside the range of a uint16_t are set to the bound.
+ * Input: integer
+ * Output: bounded uint16_t
  */
-uint8_t compressData(int data)
+uint16_t compressData(int data)
 {
-  data -= 445;
-  uint8_t compressed = data >> 1;
+  uint16_t compressed = 0;
+  if(data > 0xFFFF){
+    compressed = 0xFFFF;
+  }else if(data < 0){
+    compressed = 0;
+  }else{
+    compressed = (uint16_t)(data & 0x0000FFFF);
+  }
   return compressed;
 }
 
-/* Converts an unsigned 8-bit integer into a 32-bit signed integer by a linear transformation
- * Input: integer in range 0,255
- * Ouptut: integer in range 700 +/- 255
+/* stores an 16-bit number in the next available EEPROM memory space
+ * stops recording when the memory is full
  */
-int decompressData(uint8_t data)
+void saveData(uint16_t data)
 {
-  int output = data;
-  output = output << 1;
-  output += 446;
-  return output;
-}
-
-/* stores an 8-bit number in the next available EEPROM memory space
- * stops recording after 255 numbers have been recorded
- */
-void saveData(uint8_t data)
-{
-  uint8_t address = checkLastLocation();
-  if(address < 255)
+  uint16_t address = getAddress();
+  EEPROM.write(address, (data & 0xFF00)>>8);
+  EEPROM.write(address, data & 0x00FF);
+  if(address + 1 < EEPROM.length())
   {
-    address++;
-    EEPROM.write(address, data);
-    updateLocation(address);
+    EEPROM.write(address, (data & 0xFF00)>>8);
+    EEPROM.write(address + 1, data & 0x00FF);
+    updateLocation(address + 2);
   }
 }
 
 /* Gets the location of the last place data was entered
  * Output: last occupied spot in EEPROM memory
  */
-uint8_t checkLastLocation()
+uint16_t getAddress()
 {
-  return EEPROM.read(0);
+  uint16_t address = EEPROM.read(0);
+  address = address << 8;
+  address += EEPROM.read(1);
+  return address;
 }
 
 /* Moves the last location pointer to a new value
  * Input: new location
  */
-void updateLocation(uint8_t loc)
+void updateLocation(uint16_t loc)
 {
-  EEPROM.write(0, loc);
+  EEPROM.write(0, (loc & 0xFF00) >> 8);
+  EEPROM.write(1, loc & 0x00FF);
 }
 
 /* Reads a location in EEPROM memory
  * Input: address to read
  * Ouput: data contained at the address
  */
-uint8_t readMemory(uint8_t address)
+uint16_t readMemory(int address)
 {
-  return EEPROM.read(address);
+  if(address + 1 >= EEPROM.length() || address < 0)
+  {
+    return 0xFFFF;
+  }
+  uint16_t data = EEPROM.read(address);
+  data = data << 8;
+  data += EEPROM.read(address + 1);
+  return data;
 }
 
-/* Sets the last location pointer to 0
+/* Sets the last location pointer to the first available location
  */
 void clearEEPROM()
 {
-  updateLocation(0);
+  updateLocation(2);
 }
