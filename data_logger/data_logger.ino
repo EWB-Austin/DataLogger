@@ -53,7 +53,7 @@ void loop()
       {
         for(int i = 1; i*2 < getAddress(); i++)
         {
-          uint8_t data = readMemory(i*2);
+          uint16_t data = readMemory(i*2);
           Serial.println(data);
         }
       }
@@ -67,7 +67,7 @@ void loop()
         Serial.println(getAddress());
         for(int i = 1; i*2 < getAddress(); i++)
         {
-          uint8_t data = readMemory(i*2);
+          uint16_t data = readMemory(i*2);
           Serial.print(i-1);
           Serial.print(" --- ");
           Serial.println(data / 100.0);
