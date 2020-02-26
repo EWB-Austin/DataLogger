@@ -115,12 +115,10 @@ uint16_t compressData(int data)
 void saveData(uint16_t data)
 {
   uint16_t address = getAddress();
-  EEPROM.write(address, (data & 0xFF00)>>8);
-  EEPROM.write(address, data & 0x00FF);
   if(address + 1 < EEPROM.length())
   {
-    EEPROM.write(address, (data & 0xFF00)>>8);
-    EEPROM.write(address + 1, data & 0x00FF);
+    EEPROM.write(address, (uint8_t)((data & 0xFF00)>>8));
+    EEPROM.write(address + 1, (uint8_t)(data & 0x00FF));
     updateLocation(address + 2);
   }
 }
@@ -141,8 +139,8 @@ uint16_t getAddress()
  */
 void updateLocation(uint16_t loc)
 {
-  EEPROM.write(0, (loc & 0xFF00) >> 8);
-  EEPROM.write(1, loc & 0x00FF);
+  EEPROM.write(0, (uint8_t)((loc & 0xFF00) >> 8));
+  EEPROM.write(1, (uint8_t)(loc & 0x00FF));
 }
 
 /* Reads a location in EEPROM memory
