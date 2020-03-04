@@ -4,6 +4,7 @@
  *    DUMP: This prints all of the data recorded since the last reset directly to the Serial Monitor with one entry per line.
  *    RESET: This resets the EEPROM by setting the pointer location to 0. The message "Reset Complete" will be printed to the Serial Monitor when successful.
  *    PRINT: This prints all recorded data to the Serial Monitor formatted as <entry number, value>. The first line of the report states the number of total entries.
+ *    PYPRINT: Prints data formatted for the pySerial read program
  */
 
 
@@ -64,7 +65,7 @@ void loop()
       }
       else if(command.equalsIgnoreCase("PRINT"))
       {
-        Serial.println(getAddress());
+        //Serial.println(getAddress());
         for(int i = 1; i*2 < getAddress(); i++)
         {
           uint16_t data = readMemory(i*2);
@@ -72,6 +73,18 @@ void loop()
           Serial.print(" --- ");
           Serial.println(data / 100.0);
         }
+      }
+      else if(command.equalsIgnoreCase("PYPRINT"))
+      {
+        Serial.println(wait);
+        int numReadings = (getAddress() / 2) - 1;
+        Serial.println(numReadings);
+        for(int i = 1; i*2 < getAddress(); i++)
+        {
+          uint16_t data = readMemory(i*2);
+          Serial.println(data);
+        }
+        Serial.println(-1);
       }
       else
       {
@@ -124,7 +137,7 @@ void saveData(uint16_t data)
 }
 
 /* Gets the location of the last place data was entered
- * Output: last occupied spot in EEPROM memory
+ * Output: first unoccupied spot in EEPROM memory
  */
 uint16_t getAddress()
 {
