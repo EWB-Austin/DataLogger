@@ -45,7 +45,7 @@ void loop()
       //Read input String and remove newline character on the end
       String command = Serial.readString();
       command = command.substring(0,command.length() - 1);
-      Serial.println(command);
+      //Serial.println(command);
       //Clear any remaining data in the buffer
       while(Serial.available() > 0)
         Serial.read();
@@ -65,7 +65,7 @@ void loop()
       }
       else if(command.equalsIgnoreCase("PRINT"))
       {
-        //Serial.println(getAddress());
+        Serial.println(getAddress()/2 - 1);
         for(int i = 1; i*2 < getAddress(); i++)
         {
           uint16_t data = readMemory(i*2);
